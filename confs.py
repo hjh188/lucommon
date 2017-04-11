@@ -46,6 +46,7 @@ class LuConf(object):
     db = 'default'
 
     # for reversion
+    enable_reversion_get = True
     enable_reversion_post = False
     enable_reversion_put = False
     enable_reversion_patch = False

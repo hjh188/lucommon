@@ -62,7 +62,7 @@ class LuSQL(object):
         except Exception, err:
             raise LuSQLSyntaxError(str(err))
 
-        if not self._sql.upper().startswith('SELECT'):
+        if not self._sql.upper().startswith('SELECT') and not self._sql.upper().startswith('(SELECT'):
             return []
 
         fetchall = self._cursor.fetchall()
@@ -244,7 +244,7 @@ class LuSQL(object):
         self.__convert_sql(search_condition, conf_sql, response_field)
 
         # For limit and offset
-        if str(self._limit) != settings.UNLIMIT and self._sql.upper().startswith('SELECT'):
+        if str(self._limit) != settings.UNLIMIT and self._sql.upper().startswith('(SELECT') and not re.search(r' limit (\d+) offset (\d+)', self._sql, re.IGNORECASE):
             self._sql += ' LIMIT %d OFFSET %d' % (int(self._limit), int(self._offset))
 
         # Do the sql filtering

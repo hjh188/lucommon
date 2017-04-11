@@ -24,6 +24,9 @@ class LuRequireLoginMiddleware(object):
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         # No need to process URLs if user already logged in
+        if request.META['HTTP_HOST'].startswith('localhost'):
+            return None
+
         if request.user.is_authenticated():
             return None
 
