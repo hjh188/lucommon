@@ -5,6 +5,9 @@ from django.conf import settings
 from lucommon.decorator import login_required
 
 
+from rest_framework.authentication import TokenAuthentication
+
+
 class LuRequireLoginMiddleware(object):
     """
     Example:
@@ -26,6 +29,14 @@ class LuRequireLoginMiddleware(object):
         # No need to process URLs if user already logged in
         if request.META['HTTP_HOST'].startswith('localhost'):
             return None
+
+        # Token based auth
+        try:
+            request.user, token = TokenAuthentication().authenticate(request)
+            if token:
+                return None
+        except Exception, err:
+            pass
 
         if request.user.is_authenticated():
             return None

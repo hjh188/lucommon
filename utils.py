@@ -5,6 +5,7 @@ import os
 import errno
 from collections import OrderedDict
 import importlib
+import json
 
 """
 Utils for lucommon module
@@ -119,4 +120,24 @@ def find_project():
 
     return None
 
+def token_replace(s, t):
+    """
+    expand environment for string
+    """
+    try:
+        token = json.loads(t)
+    except:
+        token = {}
+
+    for k, v in token.items():
+        if(isinstance(v, int) or isinstance(v, str) or isinstance(v, unicode)):
+            os.environ[k] = v
+
+    s = os.path.expandvars(s)
+
+    for k, v in token.items():
+        if(isinstance(v, int) or isinstance(v, str) or isinstance(v, unicode)):
+            del os.environ[k]
+
+    return s
 

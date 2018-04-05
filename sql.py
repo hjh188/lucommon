@@ -22,17 +22,22 @@ from lucommon.simpleSQL import (
 
 from lucommon import sql_func
 
+from lucommon.utils import (
+    token_replace,
+)
+
 class LuSQL(object):
     """
     Raw SQL Interface, efficient for multiple table SQL
     """
-    def __init__(self, db, sql, sql_param=[], allow_sql=['SELECT'], map_sql={},
+    def __init__(self, db, sql, sql_param=[], sql_token='', allow_sql=['SELECT'], map_sql={},
                        search_condition='', conf_sql={},
                        limit=settings.DEFAULT_LIMIT, offset=0,
                        response_field=None, request=None):
         self._db = db
         self._sql = sql
         self._sql_param = sql_param
+        self._sql_token = sql_token
         self._limit = limit
         self._offset = offset
         self._conf_sql = conf_sql
@@ -56,7 +61,15 @@ class LuSQL(object):
             lu_logger.info(self._sql)
 
             if self._sql_param:
-                self._cursor.execute(self._sql, self._sql_param)
+                temp_param = []
+                final_sql_param = []
+                for i, param in enumerate(self._sql_param):
+                    # support in, param join by '|'
+                    # https://stackoverflow.com/questions/589284/imploding-a-list-for-use-in-a-python-mysqldb-in-clause
+                    final_sql_param.extend(param.split('|'))
+                    format_string = ','.join(['%s'] * len(param.split('|')))
+                    temp_param.append(format_string)
+                self._cursor.execute(self._sql % tuple(temp_param), tuple(final_sql_param))
             else:
                 self._cursor.execute(self._sql)
         except Exception, err:
@@ -97,16 +110,26 @@ class LuSQL(object):
             data.append(dic)
 
         try:
-            pattern = re.compile(r'SELECT (.*?) FROM', re.IGNORECASE)
-            count_sql = pattern.sub('SELECT count(*) FROM', self._sql)
+            #pattern = re.compile(r'SELECT (.*?) FROM', re.IGNORECASE)
+            #count_sql = pattern.sub('SELECT count(*) FROM', self._sql)
 
-            pattern = re.compile(r' limit (\d+) offset (\d+)', re.IGNORECASE)
-            count_sql = pattern.sub('', count_sql)
+            # remove limit offset of the sql end
+            pattern = re.compile(r' limit (\d+) offset (\d+)$', re.IGNORECASE)
+            count_sql = pattern.sub('', self._sql.strip(' ;'))
+
+            # use subquery to get the count
+            count_sql = 'select count(*) from (%s) subquery' % count_sql
 
             lu_logger.info(count_sql)
 
             if self._sql_param:
-                self._cursor.execute(count_sql, self._sql_param)
+                temp_param = []
+                final_sql_param = []
+                for i, param in enumerate(self._sql_param):
+                    final_sql_param.extend(param.split('|'))
+                    format_string = ','.join(['%s'] * len(param.split('|')))
+                    temp_param.append(format_string)
+                self._cursor.execute(count_sql % tuple(temp_param), tuple(final_sql_param))
             else:
                 self._cursor.execute(count_sql)
         except Exception, err:
@@ -246,6 +269,9 @@ class LuSQL(object):
         # For limit and offset
         if str(self._limit) != settings.UNLIMIT and self._sql.upper().startswith('(SELECT') and not re.search(r' limit (\d+) offset (\d+)', self._sql, re.IGNORECASE):
             self._sql += ' LIMIT %d OFFSET %d' % (int(self._limit), int(self._offset))
+
+        # Do the sql token replace
+        self._sql = token_replace(self._sql, self._sql_token)
 
         # Do the sql filtering
         for sql in allow_sql:

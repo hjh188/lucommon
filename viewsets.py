@@ -183,6 +183,9 @@ class LuModelViewSet(viewsets.ModelViewSet,
             # Convert json data if need, this would workable for type like mysql json field
             sql_param = map(lambda x: json.dumps(x) if isinstance(x, dict) or isinstance(x, list) else x, sql_param)
 
+            # Get sql token if need, token should be json dumps string
+            sql_token = request.query_params.get(settings.SQL_TOKEN, '')
+
             allow_sql = self.conf.sql_injection_allow
             map_sql = self.conf.sql_injection_map
 
@@ -207,7 +210,7 @@ class LuModelViewSet(viewsets.ModelViewSet,
             # Use the default sql if no sql specify
             sql = sql if sql else 'get_%s' % self.model.lower()
 
-            data = LuSQL(self.queryset._db, sql, sql_param, allow_sql, map_sql,
+            data = LuSQL(self.queryset._db, sql, sql_param, sql_token, allow_sql, map_sql,
                          search_condition, conf_sql, limit, offset, response_field, request).execute()
 
             count = data.pop(-1) if data else None
@@ -462,6 +465,9 @@ class LuModelViewSet(viewsets.ModelViewSet,
             # Convert json data if need, this would workable for type like mysql json field
             sql_param = map(lambda x: json.dumps(x) if isinstance(x, dict) or isinstance(x, list) else x, sql_param)
 
+            # Get sql token if need, token should be json dumps string
+            sql_token = request.data.get(settings.SQL_TOKEN, '')
+
             allow_sql = self.conf.sql_injection_allow
             map_sql = self.conf.sql_injection_map
 
@@ -486,7 +492,7 @@ class LuModelViewSet(viewsets.ModelViewSet,
             # Use the default sql if no sql specify
             sql = sql if sql else 'get_%s' % self.model.lower()
 
-            data = LuSQL(self.queryset._db, sql, sql_param, allow_sql, map_sql,
+            data = LuSQL(self.queryset._db, sql, sql_param, sql_token, allow_sql, map_sql,
                          search_condition, conf_sql, limit, offset, response_field, request).execute()
 
             count = data.pop(-1) if data else None
@@ -502,7 +508,11 @@ class LuModelViewSet(viewsets.ModelViewSet,
 
             # Join multiple key with delimiter
             for key in data:
-                value = data.getlist(key)
+                try:
+                    value = data.getlist(key)
+                except:
+                    value = []
+
                 if len(value) > 1:
                     data[key] = self.conf.join_multiple_key_value_pair_delimiter.join(value)
 
