@@ -186,6 +186,9 @@ class LuModelViewSet(viewsets.ModelViewSet,
             # Get sql token if need, token should be json dumps string
             sql_token = request.query_params.get(settings.SQL_TOKEN, '')
 
+            # Get sql db if provided
+            sql_db = request.query_params.get(settings.SQL_DB, self.queryset._db)
+
             allow_sql = self.conf.sql_injection_allow
             map_sql = self.conf.sql_injection_map
 
@@ -210,7 +213,7 @@ class LuModelViewSet(viewsets.ModelViewSet,
             # Use the default sql if no sql specify
             sql = sql if sql else 'get_%s' % self.model.lower()
 
-            data = LuSQL(self.queryset._db, sql, sql_param, sql_token, allow_sql, map_sql,
+            data = LuSQL(sql_db, sql, sql_param, sql_token, allow_sql, map_sql,
                          search_condition, conf_sql, limit, offset, response_field, request).execute()
 
             count = data.pop(-1) if data else None
@@ -468,6 +471,9 @@ class LuModelViewSet(viewsets.ModelViewSet,
             # Get sql token if need, token should be json dumps string
             sql_token = request.data.get(settings.SQL_TOKEN, '')
 
+            # Get sql db if provided
+            sql_db = request.data.get(settings.SQL_DB, self.queryset._db)
+
             allow_sql = self.conf.sql_injection_allow
             map_sql = self.conf.sql_injection_map
 
@@ -492,7 +498,7 @@ class LuModelViewSet(viewsets.ModelViewSet,
             # Use the default sql if no sql specify
             sql = sql if sql else 'get_%s' % self.model.lower()
 
-            data = LuSQL(self.queryset._db, sql, sql_param, sql_token, allow_sql, map_sql,
+            data = LuSQL(sql_db, sql, sql_param, sql_token, allow_sql, map_sql,
                          search_condition, conf_sql, limit, offset, response_field, request).execute()
 
             count = data.pop(-1) if data else None

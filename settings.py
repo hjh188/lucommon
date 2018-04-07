@@ -158,6 +158,7 @@ LOGIN_REQUIRED_URLS_EXCEPTIONS = [
 SQL_TEXT = 'lu_sql'
 SQL_PARAM = 'lu_sql_param'
 SQL_TOKEN = 'lu_sql_token'
+SQL_DB = 'lu_sql_db'
 SQL_SEARCH_CONDITION = 'lu_sql_search_condition'
 
 REST_FRAMEWORK_EXTENSIONS = {
